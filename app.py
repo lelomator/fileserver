@@ -1,6 +1,6 @@
 import os
 import hashlib
-from flask import Flask, request, redirect, url_for, session, jsonify, send_from_directory, render_template, flash
+from flask import Flask, request, redirect, url_for, session, send_from_directory, render_template
 
 # Flask setup
 app = Flask(__name__)
@@ -55,13 +55,8 @@ def product_key():
             product_key_valid = True
             return redirect(url_for('set_password'))
         else:
-            return 'Invalid Product Key. Try again.'
-    return '''
-    <form method="post">
-        Product Key: <input type="text" name="product_key">
-        <input type="submit" value="Submit">
-    </form>
-    '''
+            return render_template('product_key.html', error="Invalid Product Key. Try again.")
+    return render_template('product_key.html')
 
 # Passwort setzen (nur einmal)
 @app.route('/set-password', methods=['GET', 'POST'])
@@ -79,14 +74,9 @@ def set_password():
             save_password(hashed)
             return 'Password set successfully. You can now <a href="/login">login</a>.'
         else:
-            return 'Password cannot be empty.'
+            return render_template('set_password.html', error="Password cannot be empty.")
     
-    return '''
-    <form method="post">
-        Set a Password: <input type="password" name="password">
-        <input type="submit" value="Set Password">
-    </form>
-    '''
+    return render_template('set_password.html')
 
 # Login mit Passwort
 @app.route('/login', methods=['GET', 'POST'])
@@ -97,14 +87,9 @@ def login():
             session['logged_in'] = True
             return redirect(url_for('files_ui'))
         else:
-            return 'Incorrect password. Try again.'
+            return render_template('login.html', error="Incorrect password. Try again.")
     
-    return '''
-    <form method="post">
-        Enter Password: <input type="password" name="password">
-        <input type="submit" value="Login">
-    </form>
-    '''
+    return render_template('login.html')
 
 # Route zum Abmelden
 @app.route('/logout')
