@@ -1,13 +1,13 @@
 import os
 import hashlib
-from flask import Flask, request, redirect, url_for, session, jsonify, send_from_directory, flash
+from flask import Flask, request, redirect, url_for, session, jsonify, send_from_directory, render_template, flash
 
 # Flask setup
 app = Flask(__name__)
 app.secret_key = 'YOUR_SECRET_KEY'
 app.config['UPLOAD_FOLDER'] = 'user-files/'
 app.config['PASSWORD_FILE'] = 'passwords.txt'  # Datei zur Speicherung der gehashten Passwörter
-app.config['PORT'] = 25503  # Port für den Flask-Server
+app.config['PORT'] = 5000  # Port für den Flask-Server
 
 # Ensure the upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -33,11 +33,17 @@ def check_password(password):
         saved_hash = f.read().strip()
     return hash_password(password) == saved_hash
 
+# Funktion zum Überprüfen, ob ein Passwort gesetzt wurde
+def is_password_set():
+    return os.path.exists(app.config['PASSWORD_FILE'])
+
 @app.route('/')
 def index():
     if not product_key_valid:
         return redirect(url_for('product_key'))
-    return 'Welcome to the file hosting server. <a href="/set-password">Set a password</a> if not already set, or <a href="/login">Login</a>.'
+    if not is_password_set():
+        return redirect(url_for('set_password'))
+    return redirect(url_for('files_ui'))
 
 # Produkt-Key-Eingabe
 @app.route('/product-key', methods=['GET', 'POST'])
@@ -57,12 +63,15 @@ def product_key():
     </form>
     '''
 
-# Passwort setzen
+# Passwort setzen (nur einmal)
 @app.route('/set-password', methods=['GET', 'POST'])
 def set_password():
     if not product_key_valid:
         return redirect(url_for('product_key'))
-    
+
+    if is_password_set():
+        return 'Password has already been set. Please <a href="/login">login</a>.'
+
     if request.method == 'POST':
         password = request.form.get('password')
         if password:
@@ -86,7 +95,7 @@ def login():
         password = request.form.get('password')
         if check_password(password):
             session['logged_in'] = True
-            return redirect(url_for('files'))
+            return redirect(url_for('files_ui'))
         else:
             return 'Incorrect password. Try again.'
     
@@ -103,14 +112,14 @@ def logout():
     session.pop('logged_in', None)
     return redirect(url_for('login'))
 
-# Route zum Anzeigen der Dateien
+# Benutzeroberfläche für Dateien anzeigen
 @app.route('/files', methods=['GET'])
-def files():
+def files_ui():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
-    
+
     files_list = os.listdir(app.config['UPLOAD_FOLDER'])
-    return jsonify(files_list)
+    return render_template('files.html', files=files_list)
 
 # Route zum Hochladen von Dateien
 @app.route('/upload', methods=['POST'])
@@ -129,11 +138,10 @@ def upload_file():
     temp_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file.save(temp_path)
 
-    # Du kannst hier auch eine Funktion zum Scannen der Datei hinzufügen (z.B. mit VirusTotal)
-    return 'File uploaded successfully'
+    return redirect(url_for('files_ui'))
 
 # Route zum Herunterladen von Dateien
-@app.route('/files/<filename>')
+@app.route('/download/<filename>')
 def download_file(filename):
     if not session.get('logged_in'):
         return redirect(url_for('login'))
