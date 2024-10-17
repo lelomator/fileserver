@@ -24,9 +24,8 @@
             <input type="submit" value="Upload">
         </form>
 
-        <div id="progress-container">
-            <progress id="progress-bar" value="0" max="100"></progress>
-            <span id="progress-text"></span>
+        <div id="file-info-container">
+            <span id="file-info"></span>
         </div>
 
         <p><a href="{{ url_for('logout') }}" class="logout-link">Logout</a></p>
@@ -34,8 +33,7 @@
 
     <script>
         const form = document.getElementById('uploadForm');
-        const progressBar = document.getElementById('progress-bar');
-        const progressText = document.getElementById('progress-text');
+        const fileInfo = document.getElementById('file-info');
 
         form.addEventListener('submit', function(e) {
             e.preventDefault();
@@ -43,16 +41,14 @@
             const formData = new FormData(form);
             const xhr = new XMLHttpRequest();
 
-            xhr.upload.addEventListener('progress', function(e) {
-                if (e.lengthComputable) {
-                    const percentComplete = (e.loaded / e.total) * 100;
-                    progressBar.value = percentComplete;
-                    progressText.textContent = `Upload Progress: ${percentComplete.toFixed(0)}%`;
+            xhr.open('POST', form.action);
+            
+            xhr.upload.addEventListener('loadstart', function(e) {
+                const files = form.querySelector('[name="file"]').files;
+                if (files.length > 0) {
+                    fileInfo.textContent = `Uploading ${files[0].name}`;
                 }
             });
-
-            xhr.open('POST', form.action);
-            xhr.send(formData);
 
             xhr.onreadystatechange = function() {
                 if (xhr.readyState === 4 && xhr.status === 200) {
@@ -60,6 +56,8 @@
                     window.location.reload();
                 }
             };
+
+            xhr.send(formData);
         });
     </script>
 </body>
