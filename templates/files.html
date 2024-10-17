@@ -12,7 +12,7 @@
 
         <ul style="max-height: 400px; overflow-y: scroll;">
             {% if current_path %}
-                <li><a href="/file">.. (Go Back)</a></li>
+                <li><a href="{{ url_for('files_ui', path=current_path.rsplit('/', 1)[0]) }}">.. (Go Back)</a></li>
             {% endif %}
             {% for file in files %}
                 {% if '.' not in file %}
@@ -27,54 +27,25 @@
             {% endfor %}
         </ul>
 
-        <h2>Upload new files or folders</h2>
-        <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
-            <input type="file" name="file" multiple>
+        <h2>Upload Files or Folders</h2>
+
+        <!-- Button for uploading individual files -->
+        <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data" id="uploadFileForm">
+            <label for="fileInput">Upload Files:</label>
+            <input type="file" id="fileInput" name="file" multiple>
             <input type="hidden" name="current_path" value="{{ current_path }}">
-            <input type="submit" value="Upload">
+            <input type="submit" value="Upload Files">
         </form>
 
-        <div id="drop-area">
-            <p>Drag and drop files here to upload</p>
+        <!-- Button for uploading directories -->
+        <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data" id="uploadDirForm">
+            <label for="dirInput">Upload Directory:</label>
+            <input type="file" id="dirInput" name="file" multiple webkitdirectory>
             <input type="hidden" name="current_path" value="{{ current_path }}">
-        </div>
+            <input type="submit" value="Upload Directory">
+        </form>
 
         <p><a href="{{ url_for('logout') }}" class="logout-link">Logout</a></p>
     </div>
-
-    <script>
-        const dropArea = document.getElementById('drop-area');
-        const uploadForm = document.getElementById('uploadForm');
-
-        dropArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropArea.classList.add('drag-over');
-        });
-
-        dropArea.addEventListener('dragleave', (e) => {
-            dropArea.classList.remove('drag-over');
-        });
-
-        dropArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropArea.classList.remove('drag-over');
-
-            const files = e.dataTransfer.files;
-            const formData = new FormData(uploadForm);
-
-            for (const file of files) {
-                formData.append('file', file);
-            }
-
-            fetch(uploadForm.action, {
-                method: 'POST',
-                body: formData
-            }).then(() => {
-                window.location.reload();
-            }).catch((error) => {
-                console.error('Error uploading files:', error);
-            });
-        });
-    </script>
 </body>
 </html>
