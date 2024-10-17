@@ -12,7 +12,7 @@
 
         <ul style="max-height: 400px; overflow-y: scroll;">
             {% if current_path %}
-                <li><a href="{{ url_for('files_ui', path=current_path.rsplit('/', 1)[0]) }}">.. (Go Back)</a></li>
+                <li><a href="/file">.. (Go Back)</a></li>
             {% endif %}
             {% for file in files %}
                 {% if '.' not in file %}
