@@ -14,7 +14,7 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Product key validation (simplified version)
 VALID_PRODUCT_KEY = "123"
-product_key_valid = true
+product_key_valid = False
 
 # Hilfsfunktion zum Hashen eines Passworts
 def hash_password(password):
