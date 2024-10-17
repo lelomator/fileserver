@@ -8,11 +8,20 @@
 </head>
 <body>
     <div class="container">
-        <h1>Uploaded Files</h1>
+        <h1>Uploaded Files in {{ current_path or 'Root' }}</h1>
 
         <ul style="max-height: 400px; overflow-y: scroll;">
+            {% if current_path %}
+                <li><a href="{{ url_for('files_ui', path=current_path.rsplit('/', 1)[0]) }}">.. (Go Back)</a></li>
+            {% endif %}
             {% for file in files %}
-                <li><a href="{{ url_for('download_file', filename=file) }}">{{ file }}</a></li>
+                {% if '.' not in file %}
+                    <!-- Ordner -->
+                    <li><a href="{{ url_for('files_ui', path=(current_path + '/' + file).strip('/')) }}">{{ file }}/</a></li>
+                {% else %}
+                    <!-- Datei -->
+                    <li><a href="{{ url_for('download_file', filename=(current_path + '/' + file).strip('/')) }}">{{ file }}</a></li>
+                {% endif %}
             {% else %}
                 <li>No files uploaded yet.</li>
             {% endfor %}
@@ -20,7 +29,8 @@
 
         <h2>Upload new files or folders</h2>
         <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
-            <input type="file" name="file" multiple webkitdirectory>
+            <input type="file" name="file" multiple>
+            <input type="hidden" name="current_path" value="{{ current_path }}">
             <input type="submit" value="Upload">
         </form>
 
@@ -30,35 +40,5 @@
 
         <p><a href="{{ url_for('logout') }}" class="logout-link">Logout</a></p>
     </div>
-
-    <script>
-        const form = document.getElementById('uploadForm');
-        const fileInfo = document.getElementById('file-info');
-
-        form.addEventListener('submit', function(e) {
-            e.preventDefault();
-
-            const formData = new FormData(form);
-            const xhr = new XMLHttpRequest();
-
-            xhr.open('POST', form.action);
-            
-            xhr.upload.addEventListener('loadstart', function(e) {
-                const files = form.querySelector('[name="file"]').files;
-                if (files.length > 0) {
-                    fileInfo.textContent = `Uploading ${files[0].name}`;
-                }
-            });
-
-            xhr.onreadystatechange = function() {
-                if (xhr.readyState === 4 && xhr.status === 200) {
-                    // Upload finished
-                    window.location.reload();
-                }
-            };
-
-            xhr.send(formData);
-        });
-    </script>
 </body>
 </html>
