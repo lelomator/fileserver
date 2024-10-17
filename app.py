@@ -1,6 +1,6 @@
 import os
 import hashlib
-from flask import Flask, request, redirect, url_for, session, send_from_directory, render_template
+from flask import Flask, request, redirect, url_for, session, send_from_directory, render_template, jsonify
 
 # Flask setup
 app = Flask(__name__)
@@ -112,18 +112,25 @@ def upload_file():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
 
+    # Verzeichnisse und mehrere Dateien hochladen
     if 'file' not in request.files:
         return 'No file part'
     
-    file = request.files['file']
-    if file.filename == '':
-        return 'No selected file'
-
-    # Save the file temporarily
-    temp_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-    file.save(temp_path)
+    files = request.files.getlist('file')
+    
+    for file in files:
+        if file.filename == '':
+            continue
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        file.save(file_path)
 
     return redirect(url_for('files_ui'))
+
+# Fortschrittsbalken (fake Fortschritt als Beispiel)
+@app.route('/progress', methods=['POST'])
+def upload_progress():
+    # Das ist ein einfaches Beispiel für den Fortschrittsbalken
+    return jsonify({"progress": "Upload in progress"})
 
 # Route zum Herunterladen von Dateien
 @app.route('/download/<filename>')
