@@ -97,14 +97,23 @@ def logout():
     session.pop('logged_in', None)
     return redirect(url_for('login'))
 
-# Benutzeroberfläche für Dateien anzeigen
-@app.route('/files', methods=['GET'])
-def files_ui():
+# Benutzeroberfläche für Dateien und Ordner anzeigen
+@app.route('/files', defaults={'path': ''})
+@app.route('/files/<path:path>', methods=['GET'])
+def files_ui(path):
     if not session.get('logged_in'):
         return redirect(url_for('login'))
 
-    files_list = os.listdir(app.config['UPLOAD_FOLDER'])
-    return render_template('files.html', files=files_list)
+    # Setze das Verzeichnis, in das navigiert wird
+    base_path = os.path.join(app.config['UPLOAD_FOLDER'], path)
+    if not os.path.exists(base_path):
+        return "Directory not found", 404
+
+    files_and_dirs = os.listdir(base_path)
+    files_and_dirs.sort()
+
+    # Liste der Dateien und Ordner zurückgeben
+    return render_template('files.html', files=files_and_dirs, current_path=path)
 
 # Route zum Hochladen von Dateien und Ordnern
 @app.route('/upload', methods=['POST'])
@@ -112,31 +121,31 @@ def upload_file():
     if not session.get('logged_in'):
         return redirect(url_for('login'))
 
-    # Verzeichnisse und mehrere Dateien hochladen
     if 'file' not in request.files:
         return 'No file part'
     
     files = request.files.getlist('file')
-    
+    upload_path = request.form.get('current_path', '')
+
     for file in files:
         if file.filename == '':
             continue
         
-        # Bestimme den Pfad, um sicherzustellen, dass das Verzeichnis existiert
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
-        file_directory = os.path.dirname(file_path)
+        # Pfad zum aktuellen Verzeichnis
+        save_path = os.path.join(app.config['UPLOAD_FOLDER'], upload_path, file.filename)
+        file_directory = os.path.dirname(save_path)
 
         # Erstelle das Verzeichnis, falls es noch nicht existiert
         if not os.path.exists(file_directory):
             os.makedirs(file_directory)
 
         # Speichere die Datei
-        file.save(file_path)
+        file.save(save_path)
 
-    return redirect(url_for('files_ui'))
+    return redirect(url_for('files_ui', path=upload_path))
 
 # Route zum Herunterladen von Dateien
-@app.route('/download/<filename>')
+@app.route('/download/<path:filename>')
 def download_file(filename):
     if not session.get('logged_in'):
         return redirect(url_for('login'))
