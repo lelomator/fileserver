@@ -10,7 +10,7 @@
     <div class="container">
         <h1>Uploaded Files</h1>
 
-        <ul>
+        <ul style="max-height: 400px; overflow-y: scroll;">
             {% for file in files %}
                 <li><a href="{{ url_for('download_file', filename=file) }}">{{ file }}</a></li>
             {% else %}
@@ -18,17 +18,49 @@
             {% endfor %}
         </ul>
 
-        <h2>Upload a new file</h2>
-        <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data">
-            <input type="file" name="file">
+        <h2>Upload new files or folders</h2>
+        <form action="{{ url_for('upload_file') }}" method="POST" enctype="multipart/form-data" id="uploadForm">
+            <input type="file" name="file" multiple webkitdirectory>
             <input type="submit" value="Upload">
         </form>
 
-        <p><a href="{{ url_for('logout') }}" class="logout-link">Logout</a></p>
-
-        <div class="footer">
-            <p>Secure File Hosting</p>
+        <div id="progress-container">
+            <progress id="progress-bar" value="0" max="100"></progress>
+            <span id="progress-text"></span>
         </div>
+
+        <p><a href="{{ url_for('logout') }}" class="logout-link">Logout</a></p>
     </div>
+
+    <script>
+        const form = document.getElementById('uploadForm');
+        const progressBar = document.getElementById('progress-bar');
+        const progressText = document.getElementById('progress-text');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const formData = new FormData(form);
+            const xhr = new XMLHttpRequest();
+
+            xhr.upload.addEventListener('progress', function(e) {
+                if (e.lengthComputable) {
+                    const percentComplete = (e.loaded / e.total) * 100;
+                    progressBar.value = percentComplete;
+                    progressText.textContent = `Upload Progress: ${percentComplete.toFixed(0)}%`;
+                }
+            });
+
+            xhr.open('POST', form.action);
+            xhr.send(formData);
+
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    // Upload finished
+                    window.location.reload();
+                }
+            };
+        });
+    </script>
 </body>
 </html>
