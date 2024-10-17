@@ -7,6 +7,7 @@ app = Flask(__name__)
 app.secret_key = 'YOUR_SECRET_KEY'
 app.config['UPLOAD_FOLDER'] = 'user-files/'
 app.config['PASSWORD_FILE'] = 'passwords.txt'  # Datei zur Speicherung der gehashten Passwörter
+app.config['PORT'] = 25503  # Port für den Flask-Server
 
 # Ensure the upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -139,6 +140,7 @@ def download_file(filename):
 
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
-# Run the app
+# Run the app with configurable port
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', app.config['PORT']))  # Port aus Umgebungsvariable oder Config
+    app.run(debug=True, host='0.0.0.0', port=port)
