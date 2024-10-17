@@ -121,7 +121,16 @@ def upload_file():
     for file in files:
         if file.filename == '':
             continue
+        
+        # Bestimme den Pfad, um sicherzustellen, dass das Verzeichnis existiert
         file_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
+        file_directory = os.path.dirname(file_path)
+
+        # Erstelle das Verzeichnis, falls es noch nicht existiert
+        if not os.path.exists(file_directory):
+            os.makedirs(file_directory)
+
+        # Speichere die Datei
         file.save(file_path)
 
     return redirect(url_for('files_ui'))
