@@ -7,13 +7,13 @@ app = Flask(__name__)
 app.secret_key = 'YOUR_SECRET_KEY'
 app.config['UPLOAD_FOLDER'] = 'user-files/'
 app.config['PASSWORD_FILE'] = 'passwords.txt'  # Datei zur Speicherung der gehashten Passwörter
-app.config['PORT'] = 5000  # Port für den Flask-Server
+app.config['PORT'] = 25503  # Port für den Flask-Server
 
 # Ensure the upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Product key validation (simplified version)
-VALID_PRODUCT_KEY = "VALID_KEY"
+VALID_PRODUCT_KEY = "123"
 product_key_valid = False
 
 # Hilfsfunktion zum Hashen eines Passworts
