@@ -1,32 +1,34 @@
 #!/bin/bash
 
-# Exit on any error
+# Beende das Skript bei einem Fehler
 set -e
 
-# Update the system and install necessary packages
-echo "Updating system and installing necessary packages..."
-apt update
-apt install -y git python3 python3-venv
-
-# Navigate to the server directory
+# Wechsle in das Server-Verzeichnis
 cd /mnt/server
 
-# Clone the repository from GitHub
-echo "Cloning the repository..."
-git clone https://github.com/lelomator/fileserver.git .
-
-# Create a virtual environment
+# Erstelle eine virtuelle Umgebung
 echo "Creating virtual environment..."
 python3 -m venv venv
 
-# Activate the virtual environment
+# Aktiviere die virtuelle Umgebung
 source venv/bin/activate
 
-# Install the required dependencies
-echo "Installing dependencies..."
-pip install -r requirements.txt
+# Installiere zusätzliche Python-Pakete, falls angegeben
+if [[ ! -z "${PY_PACKAGES}" ]]; then
+    echo "Installing additional Python packages: ${PY_PACKAGES}"
+    pip install -U ${PY_PACKAGES}
+fi
 
-# Ensure the upload directory exists
+# Überprüfe, ob die requirements.txt-Datei existiert, und installiere die Abhängigkeiten
+if [[ -f /mnt/server/${REQUIREMENTS_FILE} ]]; then
+    echo "Installing Python dependencies from ${REQUIREMENTS_FILE}..."
+    pip install -U -r ${REQUIREMENTS_FILE}
+else
+    echo "No ${REQUIREMENTS_FILE} found, skipping dependency installation."
+fi
+
+# Erstelle das Verzeichnis für hochgeladene Dateien, falls es nicht existiert
 mkdir -p user-files
 
-echo "Setup complete. Flask application is ready to be started!"
+echo "Setup complete. The environment is ready to start the Flask application."
+
