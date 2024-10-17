@@ -1,45 +1,44 @@
 import os
+import hashlib
 from flask import Flask, request, redirect, url_for, session, jsonify, send_from_directory, flash
-from flask_oauthlib.client import OAuth
-import requests
 
 # Flask setup
 app = Flask(__name__)
 app.secret_key = 'YOUR_SECRET_KEY'
 app.config['UPLOAD_FOLDER'] = 'user-files/'
+app.config['PASSWORD_FILE'] = 'passwords.txt'  # Datei zur Speicherung der gehashten Passwörter
 
 # Ensure the upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
-
-# VirusTotal API key
-VIRUSTOTAL_API_KEY = 'YOUR_VIRUSTOTAL_API_KEY'
-
-# OAuth setup
-oauth = OAuth(app)
-google = oauth.remote_app(
-    'google',
-    consumer_key='YOUR_GOOGLE_CLIENT_ID',
-    consumer_secret='YOUR_GOOGLE_CLIENT_SECRET',
-    request_token_params={
-        'scope': 'email',
-    },
-    base_url='https://www.googleapis.com/oauth2/v1/',
-    request_token_url=None,
-    access_token_method='POST',
-    access_token_url='https://accounts.google.com/o/oauth2/token',
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
-)
 
 # Product key validation (simplified version)
 VALID_PRODUCT_KEY = "VALID_KEY"
 product_key_valid = False
 
+# Hilfsfunktion zum Hashen eines Passworts
+def hash_password(password):
+    return hashlib.sha256(password.encode('utf-8')).hexdigest()
+
+# Funktion zum Speichern des gehashten Passworts
+def save_password(hash):
+    with open(app.config['PASSWORD_FILE'], 'w') as f:
+        f.write(hash)
+
+# Funktion zum Überprüfen des Passworts
+def check_password(password):
+    if not os.path.exists(app.config['PASSWORD_FILE']):
+        return False
+    with open(app.config['PASSWORD_FILE'], 'r') as f:
+        saved_hash = f.read().strip()
+    return hash_password(password) == saved_hash
+
 @app.route('/')
 def index():
     if not product_key_valid:
         return redirect(url_for('product_key'))
-    return 'Welcome to the file hosting server. <a href="/login">Login with Google</a>'
+    return 'Welcome to the file hosting server. <a href="/set-password">Set a password</a> if not already set, or <a href="/login">Login</a>.'
 
+# Produkt-Key-Eingabe
 @app.route('/product-key', methods=['GET', 'POST'])
 def product_key():
     global product_key_valid
@@ -47,7 +46,7 @@ def product_key():
         key = request.form.get('product_key')
         if key == VALID_PRODUCT_KEY:
             product_key_valid = True
-            return redirect(url_for('login'))
+            return redirect(url_for('set_password'))
         else:
             return 'Invalid Product Key. Try again.'
     return '''
@@ -57,43 +56,65 @@ def product_key():
     </form>
     '''
 
-@app.route('/login')
-def login():
-    return google.authorize(callback=url_for('authorized', _external=True))
+# Passwort setzen
+@app.route('/set-password', methods=['GET', 'POST'])
+def set_password():
+    if not product_key_valid:
+        return redirect(url_for('product_key'))
+    
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if password:
+            hashed = hash_password(password)
+            save_password(hashed)
+            return 'Password set successfully. You can now <a href="/login">login</a>.'
+        else:
+            return 'Password cannot be empty.'
+    
+    return '''
+    <form method="post">
+        Set a Password: <input type="password" name="password">
+        <input type="submit" value="Set Password">
+    </form>
+    '''
 
+# Login mit Passwort
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        password = request.form.get('password')
+        if check_password(password):
+            session['logged_in'] = True
+            return redirect(url_for('files'))
+        else:
+            return 'Incorrect password. Try again.'
+    
+    return '''
+    <form method="post">
+        Enter Password: <input type="password" name="password">
+        <input type="submit" value="Login">
+    </form>
+    '''
+
+# Route zum Abmelden
 @app.route('/logout')
 def logout():
-    session.pop('google_token')
-    return redirect(url_for('index'))
+    session.pop('logged_in', None)
+    return redirect(url_for('login'))
 
-@app.route('/login/authorized')
-def authorized():
-    response = google.authorized_response()
-    if response is None or response.get('access_token') is None:
-        return 'Access denied: reason={} error={}'.format(
-            request.args['error_reason'],
-            request.args['error_description']
-        )
-    session['google_token'] = (response['access_token'], '')
-    return redirect(url_for('files'))
-
-@google.tokengetter
-def get_google_oauth_token():
-    return session.get('google_token')
-
-# Route to list uploaded files
+# Route zum Anzeigen der Dateien
 @app.route('/files', methods=['GET'])
 def files():
-    if 'google_token' not in session:
+    if not session.get('logged_in'):
         return redirect(url_for('login'))
     
     files_list = os.listdir(app.config['UPLOAD_FOLDER'])
     return jsonify(files_list)
 
-# Route to handle file uploads
+# Route zum Hochladen von Dateien
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    if 'google_token' not in session:
+    if not session.get('logged_in'):
         return redirect(url_for('login'))
 
     if 'file' not in request.files:
@@ -107,42 +128,16 @@ def upload_file():
     temp_path = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
     file.save(temp_path)
 
-    # Scan the file with VirusTotal
-    is_safe = scan_with_virustotal(temp_path)
-    if not is_safe:
-        os.remove(temp_path)
-        return 'File contains a virus and has been rejected.'
+    # Du kannst hier auch eine Funktion zum Scannen der Datei hinzufügen (z.B. mit VirusTotal)
+    return 'File uploaded successfully'
 
-    return 'File uploaded and scanned successfully'
-
-# Route to download a file
+# Route zum Herunterladen von Dateien
 @app.route('/files/<filename>')
 def download_file(filename):
-    if 'google_token' not in session:
+    if not session.get('logged_in'):
         return redirect(url_for('login'))
 
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
-
-# Function to scan file with VirusTotal
-def scan_with_virustotal(file_path):
-    url = 'https://www.virustotal.com/vtapi/v2/file/scan'
-    files = {'file': open(file_path, 'rb')}
-    params = {'apikey': VIRUSTOTAL_API_KEY}
-    
-    response = requests.post(url, files=files, params=params)
-    result = response.json()
-
-    scan_id = result['scan_id']
-
-    # Retrieve the scan results
-    report_url = 'https://www.virustotal.com/vtapi/v2/file/report'
-    report_params = {'apikey': VIRUSTOTAL_API_KEY, 'resource': scan_id}
-    
-    report_response = requests.get(report_url, params=report_params)
-    report_result = report_response.json()
-
-    # Check if the file is clean
-    return report_result['positives'] == 0
 
 # Run the app
 if __name__ == '__main__':
