@@ -70,6 +70,10 @@ app.get('/', (req, res) => {
 
 // Datei Upload Route (geschützt)
 app.post('/upload', upload.array('files'), (req, res) => {
+  req.files.forEach(file => {
+    console.log('Hochgeladen:', file.originalname); // Überprüfen der hochgeladenen Dateinamen
+  });
+
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ error: 'Keine Dateien hochgeladen' });
   }
@@ -113,6 +117,7 @@ app.delete('/delete/:filename', (req, res) => {
   }
 });
 
-app.listen(3000, () => {
+// Starte den Server
+app.listen(25503, () => {
   console.log('Server läuft auf http://localhost:3000');
 });
