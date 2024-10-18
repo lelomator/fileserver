@@ -1,5 +1,5 @@
 const express = require('express');
-const multer = require('multer');
+const fileUpload = require('express-fileupload');
 const fs = require('fs');
 const path = require('path');
 const cookieParser = require('cookie-parser');
@@ -14,25 +14,13 @@ app.use('/uploads', express.static(uploadDir)); // Bereitstellung von hochgelade
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
-// Multer-Konfiguration
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const folderPath = path.join(uploadDir, path.dirname(file.originalname)); // Unterordnerstruktur beibehalten
-    fs.mkdirSync(folderPath, { recursive: true });
-    cb(null, folderPath); // Dateien im richtigen Verzeichnis speichern
-  },
-  filename: (req, file, cb) => {
-    cb(null, path.basename(file.originalname)); // Nur der Dateiname ohne Pfad
-  }
-});
-
-const upload = multer({
-  storage,
-  limits: {
-    fileSize: 100 * 1024 * 1024, // Setze das Limit für jede Datei auf 100 MB
-    files: 500 // Maximal 500 Dateien gleichzeitig
-  }
-});
+// Middleware für File Uploads
+app.use(fileUpload({
+  createParentPath: true,
+  limits: { fileSize: 100 * 1024 * 1024 }, // 100MB Limit pro Datei
+  useTempFiles: true, // Für große Uploads
+  tempFileDir: '/tmp/' // Temporärer Speicherort
+}));
 
 // Funktion zur Passwortprüfung
 function checkPassword(req, res, next) {
@@ -68,11 +56,31 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-// Datei Upload Route (geschützt)
-app.post('/upload', upload.array('files'), (req, res) => {
-  if (!req.files || req.files.length === 0) {
+// Datei Upload Route (geschützt) – akzeptiert Dateien und Ordner
+app.post('/upload', (req, res) => {
+  if (!req.files) {
     return res.status(400).json({ error: 'Keine Dateien hochgeladen' });
   }
+
+  const files = req.files.files; // "files" muss zum HTML-input Feld passen
+  if (Array.isArray(files)) {
+    files.forEach(file => {
+      const uploadPath = path.join(uploadDir, file.name);
+      file.mv(uploadPath, err => {
+        if (err) {
+          return res.status(500).send(err);
+        }
+      });
+    });
+  } else {
+    const uploadPath = path.join(uploadDir, files.name);
+    files.mv(uploadPath, err => {
+      if (err) {
+        return res.status(500).send(err);
+      }
+    });
+  }
+
   res.redirect('/');
 });
 
