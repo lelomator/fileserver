@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>File Upload</title>
+  <style>
+    #drop-area {
+      width: 100%;
+      height: 200px;
+      border: 2px dashed #ccc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 20px 0;
+    }
+    #file-list {
+      list-style: none;
+    }
+    #file-list li {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <h2>Ziehe eine Datei oder einen Ordner, um sie hochzuladen</h2>
+  
+  <div id="drop-area">
+    <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
+      <input type="file" id="fileElem" name="files" multiple>
+      <label for="fileElem">Datei hierhin ziehen oder anklicken, um eine auszuwählen</label>
+    </form>
+  </div>
+
+  <h3>Hochgeladene Dateien:</h3>
+  <ul id="file-list"></ul>
+
+  <script>
+    const uploadForm = document.getElementById('upload-form');
+    const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('fileElem');
+    const fileList = document.getElementById('file-list');
+
+    // Drag & Drop Handler
+    dropArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropArea.style.borderColor = '#000';
+    });
+
+    dropArea.addEventListener('dragleave', () => {
+      dropArea.style.borderColor = '#ccc';
+    });
+
+    dropArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropArea.style.borderColor = '#ccc';
+      fileInput.files = e.dataTransfer.files;
+      uploadForm.submit();
+    });
+
+    // Liste der Dateien laden
+    function loadFileList() {
+      fetch('/files')
+        .then(response => response.json())
+        .then(files => {
+          fileList.innerHTML = '';
+          files.forEach(file => {
+            const li = document.createElement('li');
+            const a = document.createElement('a');
+            a.href = `/uploads/${file}`;
+            a.textContent = file;
+            a.download = file;
+            li.appendChild(a);
+            fileList.appendChild(li);
+          });
+        });
+    }
+
+    loadFileList();
+  </script>
+
+</body>
+</html>
