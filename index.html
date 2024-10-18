@@ -6,7 +6,6 @@
   <title>File Upload</title>
   <link rel="stylesheet" href="/style.css">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=delete" />
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
 </head>
 <body>
 
@@ -16,7 +15,6 @@
     <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
       <input type="file" id="fileElem" name="files" multiple webkitdirectory required>
       <label for="fileElem">Datei oder Ordner hierhin ziehen oder anklicken, um eine Datei oder einen Ordner auszuwählen</label>
-      <button type="button" id="uploadBtn">Hochladen</button>
     </form>
   </div>
 
@@ -24,58 +22,38 @@
   <ul id="file-list"></ul>
 
   <script>
-    const uploadBtn = document.getElementById('uploadBtn');
-    const fileInput = document.getElementById('fileElem');
+    const uploadForm = document.getElementById('upload-form');
     const dropArea = document.getElementById('drop-area');
+    const fileInput = document.getElementById('fileElem');
+    const fileList = document.getElementById('file-list');
 
-    uploadBtn.addEventListener('click', zipAndUploadFiles);
+    // Drag & Drop Handler
+    dropArea.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      dropArea.style.borderColor = '#388E3C';
+    });
 
-    // Funktion zum Zippen der Dateien und Upload
-    function zipAndUploadFiles() {
-      const files = fileInput.files;
-      if (!files.length) {
-        alert('Bitte wähle Dateien oder einen Ordner zum Hochladen aus.');
-        return;
-      }
+    dropArea.addEventListener('dragleave', () => {
+      dropArea.style.borderColor = '#4CAF50';
+    });
 
-      const zip = new JSZip();
-      const folder = zip.folder('upload'); // Ordner in der ZIP-Datei
-
-      // Dateien zum ZIP-Ordner hinzufügen
-      Array.from(files).forEach(file => {
-        folder.file(file.webkitRelativePath || file.name, file);
-      });
-
-      // ZIP-Datei generieren
-      zip.generateAsync({ type: 'blob' }).then(function (content) {
-        const formData = new FormData();
-        formData.append('file', content, 'upload.zip');
-
-        // Datei hochladen
-        fetch('/upload', {
-          method: 'POST',
-          body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-          console.log('Upload erfolgreich:', data);
-          loadFileList();
-        })
-        .catch(err => console.error('Fehler beim Hochladen:', err));
-      });
-    }
+    dropArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      dropArea.style.borderColor = '#4CAF50';
+      fileInput.files = e.dataTransfer.files;
+      uploadForm.submit();
+    });
 
     // Liste der Dateien laden
     function loadFileList() {
       fetch('/files')
         .then(response => response.json())
         .then(files => {
-          const fileList = document.getElementById('file-list');
           fileList.innerHTML = '';
           files.forEach(file => {
             const li = document.createElement('li');
             const a = document.createElement('a');
-            a.href = `/download/${file}`;
+            a.href = /download/${file};
             a.textContent = file;
             a.download = file;
 
@@ -93,8 +71,8 @@
 
     // Datei löschen
     function deleteFile(filename) {
-      if (confirm(`Möchtest du die Datei "${filename}" wirklich löschen?`)) {
-        fetch(`/delete/${filename}`, {
+      if (confirm(Möchtest du die Datei "${filename}" wirklich löschen?)) {
+        fetch(/delete/${filename}, {
           method: 'DELETE',
         })
         .then(response => response.json())
