@@ -39,14 +39,9 @@ function checkPassword(req, res, next) {
   }
 }
 
-// Route für die Login-Seite
+// Route für die Login-Seite (zeigt login.html an)
 app.get('/login', (req, res) => {
-  res.send(`
-    <form method="POST" action="/login">
-      <label>Passwort: <input type="password" name="password"></label>
-      <button type="submit">Login</button>
-    </form>
-  `);
+  res.sendFile(__dirname + '/login.html');
 });
 
 // POST-Route für das Login
