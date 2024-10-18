@@ -24,6 +24,9 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
+// Statische Dateien wie CSS verfügbar machen
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Middleware, um statische Dateien aus dem "uploads"-Ordner zu servieren
 app.use('/uploads', express.static(uploadDir));
 app.use(cookieParser());
@@ -108,6 +111,6 @@ app.delete('/delete/:filename', (req, res) => {
   }
 });
 
-app.listen(25503, () => {
+app.listen(3000, () => {
   console.log('Server running on http://localhost:3000');
 });
