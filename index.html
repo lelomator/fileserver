@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>File Upload</title>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=delete" />
   <style>
     #drop-area {
       width: 100%;
@@ -19,6 +20,13 @@
     }
     #file-list li {
       margin: 5px 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .material-symbols-outlined {
+      cursor: pointer;
+      color: red;
     }
   </style>
 </head>
@@ -70,10 +78,35 @@
             const a = document.createElement('a');
             a.href = `/download/${file}`;
             a.textContent = file;
+            a.download = file;
+
+            const deleteIcon = document.createElement('span');
+            deleteIcon.className = 'material-symbols-outlined';
+            deleteIcon.textContent = 'delete';
+            deleteIcon.onclick = () => deleteFile(file);
+
             li.appendChild(a);
+            li.appendChild(deleteIcon);
             fileList.appendChild(li);
           });
         });
+    }
+
+    // Datei löschen
+    function deleteFile(filename) {
+      if (confirm(`Möchtest du die Datei "${filename}" wirklich löschen?`)) {
+        fetch(`/delete/${filename}`, {
+          method: 'DELETE',
+        })
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            loadFileList();
+          } else {
+            alert('Löschen der Datei fehlgeschlagen');
+          }
+        });
+      }
     }
 
     loadFileList();
