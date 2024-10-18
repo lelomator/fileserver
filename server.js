@@ -15,7 +15,9 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
+    // Dateinamen anpassen: Leerzeichen durch Unterstriche ersetzen
+    const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
+    cb(null, Date.now() + '-' + sanitizedFilename);
   },
 });
 
@@ -58,6 +60,6 @@ app.get('/download/:filename', (req, res) => {
   }
 });
 
-app.listen(25503, () => {
+app.listen(3000, () => {
   console.log('Server running on http://localhost:3000');
 });
