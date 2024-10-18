@@ -14,17 +14,7 @@ app.use('/uploads', express.static(uploadDir)); // Bereitstellung von hochgelade
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
-// Funktion zur Passwortprüfung
-function checkPassword(req, res, next) {
-  const userPassword = req.cookies.password;
-  if (userPassword === correctPassword) {
-    return next();
-  } else {
-    return res.redirect('/login');
-  }
-}
-
-// Multer-Konfiguration für Ordner und Dateien
+// Multer-Konfiguration
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const folderPath = path.join(uploadDir, path.dirname(file.originalname)); // Unterordnerstruktur beibehalten
@@ -36,7 +26,23 @@ const storage = multer.diskStorage({
   }
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 100 * 1024 * 1024, // Setze das Limit für jede Datei auf 100 MB
+    files: 500 // Maximal 500 Dateien gleichzeitig
+  }
+});
+
+// Funktion zur Passwortprüfung
+function checkPassword(req, res, next) {
+  const userPassword = req.cookies.password;
+  if (userPassword === correctPassword) {
+    return next();
+  } else {
+    return res.redirect('/login');
+  }
+}
 
 // Route für die Login-Seite
 app.get('/login', (req, res) => {
@@ -54,7 +60,7 @@ app.post('/login', (req, res) => {
   }
 });
 
-// Ab hier geschützte Routen, nur zugänglich, wenn das Passwort korrekt ist
+// Geschützte Routen ab hier
 app.use(checkPassword);
 
 // HTML Seite anzeigen (geschützt)
@@ -62,7 +68,7 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-// Datei Upload Route (geschützt) – akzeptiert Dateien und Ordner
+// Datei Upload Route (geschützt)
 app.post('/upload', upload.array('files'), (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ error: 'Keine Dateien hochgeladen' });
