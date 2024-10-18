@@ -53,7 +53,7 @@
           files.forEach(file => {
             const li = document.createElement('li');
             const a = document.createElement('a');
-            a.href = /download/${file};
+            a.href = `/download/${file}`;
             a.textContent = file;
             a.download = file;
 
@@ -71,8 +71,8 @@
 
     // Datei löschen
     function deleteFile(filename) {
-      if (confirm(Möchtest du die Datei "${filename}" wirklich löschen?)) {
-        fetch(/delete/${filename}, {
+      if (confirm(`Möchtest du die Datei "${filename}" wirklich löschen?`)) {
+        fetch(`/delete/${filename}`, {
           method: 'DELETE',
         })
         .then(response => response.json())
