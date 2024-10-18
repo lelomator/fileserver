@@ -8,27 +8,9 @@ const app = express();
 const uploadDir = path.join(__dirname, 'uploads');
 const correctPassword = 'meinpasswort'; // Setze hier das gewünschte Passwort
 
-// Multer Speicher für hochgeladene Dateien
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const sanitizedFilename = file.originalname.replace(/\s+/g, '_');
-    cb(null, Date.now() + '-' + sanitizedFilename);
-  },
-});
-
-const upload = multer({ storage });
-
-// Statische Dateien wie CSS verfügbar machen
+// Middleware für statische Dateien (CSS usw.)
 app.use(express.static(path.join(__dirname, 'public')));
-
-// Middleware, um statische Dateien aus dem "uploads"-Ordner zu servieren
-app.use('/uploads', express.static(uploadDir));
+app.use('/uploads', express.static(uploadDir)); // Bereitstellung von hochgeladenen Dateien
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
 
@@ -42,7 +24,21 @@ function checkPassword(req, res, next) {
   }
 }
 
-// Route für die Login-Seite (zeigt login.html an)
+// Multer-Konfiguration für Ordner und Dateien
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    const folderPath = path.join(uploadDir, path.dirname(file.originalname)); // Unterordnerstruktur beibehalten
+    fs.mkdirSync(folderPath, { recursive: true });
+    cb(null, folderPath); // Dateien im richtigen Verzeichnis speichern
+  },
+  filename: (req, file, cb) => {
+    cb(null, path.basename(file.originalname)); // Nur der Dateiname ohne Pfad
+  }
+});
+
+const upload = multer({ storage });
+
+// Route für die Login-Seite
 app.get('/login', (req, res) => {
   res.sendFile(__dirname + '/login.html');
 });
@@ -66,10 +62,10 @@ app.get('/', (req, res) => {
   res.sendFile(__dirname + '/index.html');
 });
 
-// Datei Upload Route (geschützt)
+// Datei Upload Route (geschützt) – akzeptiert Dateien und Ordner
 app.post('/upload', upload.array('files'), (req, res) => {
   if (!req.files || req.files.length === 0) {
-    return res.status(400).json({ error: 'No files uploaded' });
+    return res.status(400).json({ error: 'Keine Dateien hochgeladen' });
   }
   res.redirect('/');
 });
@@ -78,7 +74,7 @@ app.post('/upload', upload.array('files'), (req, res) => {
 app.get('/files', (req, res) => {
   fs.readdir(uploadDir, (err, files) => {
     if (err) {
-      return res.status(500).json({ error: 'Could not list the files' });
+      return res.status(500).json({ error: 'Konnte die Dateien nicht auflisten' });
     }
     res.json(files);
   });
@@ -91,7 +87,7 @@ app.get('/download/:filename', (req, res) => {
   if (fs.existsSync(filePath)) {
     res.download(filePath);
   } else {
-    res.status(404).json({ error: 'File not found' });
+    res.status(404).json({ error: 'Datei nicht gefunden' });
   }
 });
 
@@ -102,15 +98,15 @@ app.delete('/delete/:filename', (req, res) => {
   if (fs.existsSync(filePath)) {
     fs.unlink(filePath, (err) => {
       if (err) {
-        return res.status(500).json({ error: 'Could not delete the file' });
+        return res.status(500).json({ error: 'Datei konnte nicht gelöscht werden' });
       }
       res.json({ success: true });
     });
   } else {
-    res.status(404).json({ error: 'File not found' });
+    res.status(404).json({ error: 'Datei nicht gefunden' });
   }
 });
 
 app.listen(25503, () => {
-  console.log('Server running on http://localhost:3000');
+  console.log('Server läuft auf http://localhost:3000');
 });
