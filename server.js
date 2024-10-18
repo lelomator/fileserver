@@ -60,6 +60,22 @@ app.get('/download/:filename', (req, res) => {
   }
 });
 
+// Route zum Löschen von Dateien
+app.delete('/delete/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(uploadDir, filename);
+  if (fs.existsSync(filePath)) {
+    fs.unlink(filePath, (err) => {
+      if (err) {
+        return res.status(500).json({ error: 'Could not delete the file' });
+      }
+      res.json({ success: true });
+    });
+  } else {
+    res.status(404).json({ error: 'File not found' });
+  }
+});
+
 app.listen(25503, () => {
   console.log('Server running on http://localhost:3000');
 });
