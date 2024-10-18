@@ -21,7 +21,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Middleware, um statische Dateien aus dem "uploads" Ordner zu servieren
+// Middleware, um statische Dateien aus dem "uploads"-Ordner zu servieren
 app.use('/uploads', express.static(uploadDir));
 
 // HTML Seite anzeigen
@@ -31,6 +31,9 @@ app.get('/', (req, res) => {
 
 // Datei Upload Route
 app.post('/upload', upload.array('files'), (req, res) => {
+  if (!req.files || req.files.length === 0) {
+    return res.status(400).json({ error: 'No files uploaded' });
+  }
   res.redirect('/');
 });
 
@@ -44,6 +47,17 @@ app.get('/files', (req, res) => {
   });
 });
 
-app.listen(25503, () => {
+// Herunterladen von Dateien ermöglichen
+app.get('/download/:filename', (req, res) => {
+  const filename = req.params.filename;
+  const filePath = path.join(uploadDir, filename);
+  if (fs.existsSync(filePath)) {
+    res.download(filePath); // Datei wird zum Download angeboten
+  } else {
+    res.status(404).json({ error: 'File not found' });
+  }
+});
+
+app.listen(3000, () => {
   console.log('Server running on http://localhost:3000');
 });
