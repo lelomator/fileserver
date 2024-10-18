@@ -28,7 +28,7 @@
   
   <div id="drop-area">
     <form id="upload-form" action="/upload" method="POST" enctype="multipart/form-data">
-      <input type="file" id="fileElem" name="files" multiple>
+      <input type="file" id="fileElem" name="files" multiple required>
       <label for="fileElem">Datei hierhin ziehen oder anklicken, um eine auszuwählen</label>
     </form>
   </div>
@@ -68,9 +68,8 @@
           files.forEach(file => {
             const li = document.createElement('li');
             const a = document.createElement('a');
-            a.href = `/uploads/${file}`;
+            a.href = `/download/${file}`;
             a.textContent = file;
-            a.download = file;
             li.appendChild(a);
             fileList.appendChild(li);
           });
