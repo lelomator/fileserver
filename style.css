@@ -1,0 +1,109 @@
+/* Global Styles */
+body {
+  font-family: 'Arial', sans-serif;
+  background-color: #f0f4f7;
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
+
+/* File Upload Page Styles */
+h2, h3 {
+  text-align: center;
+  color: #333;
+}
+
+#drop-area {
+  width: 80%;
+  height: 200px;
+  margin: 20px auto;
+  border: 2px dashed #4CAF50;
+  border-radius: 10px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f9f9f9;
+  transition: border-color 0.3s ease;
+}
+
+#drop-area:hover {
+  border-color: #388E3C;
+}
+
+#fileElem {
+  display: none;
+}
+
+#upload-form label {
+  font-size: 1.2em;
+  color: #4CAF50;
+  cursor: pointer;
+}
+
+#file-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 0 auto;
+  max-width: 600px;
+}
+
+#file-list li {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin: 5px 0;
+  border-radius: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.material-symbols-outlined {
+  color: #f44336;
+  cursor: pointer;
+  font-size: 24px;
+}
+
+/* Login Page Styles */
+form {
+  width: 80%;
+  max-width: 400px;
+  margin: 150px auto;
+  padding: 20px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+label {
+  display: block;
+  font-size: 1.1em;
+  color: #555;
+  margin-bottom: 8px;
+}
+
+input[type="password"] {
+  width: calc(100% - 20px);
+  padding: 10px;
+  margin-bottom: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+button {
+  width: 100%;
+  padding: 10px;
+  background-color: #4CAF50;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 1.1em;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
